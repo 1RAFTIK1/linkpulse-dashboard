@@ -23,12 +23,13 @@ export function Chart({ clicks }: { clicks: ClickData[] }) {
 
   const w = 600;
   const h = 140;
+  const topPad = 14; // место под цифру над самым высоким столбиком
   const barW = w / WINDOW_MIN;
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="chart" role="img" aria-label="Клики по минутам">
       {counts.map((n, i) => {
-        const barH = (n / max) * (h - 24);
+        const barH = (n / max) * (h - 16 - topPad);
         return (
           <g key={i}>
             <rect
