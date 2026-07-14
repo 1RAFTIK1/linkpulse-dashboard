@@ -4,7 +4,7 @@
 # Нюанс мульти-репо: go.mod содержит replace на ../linkpulse-contracts,
 # поэтому контекст сборки — родительская папка:
 #   docker build -f linkpulse-dashboard/Dockerfile .
-FROM node:24-alpine AS web
+FROM node:26-alpine AS web
 WORKDIR /web
 COPY linkpulse-dashboard/web/package.json linkpulse-dashboard/web/package-lock.json ./
 RUN npm ci
