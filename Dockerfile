@@ -19,7 +19,7 @@ RUN go mod download
 COPY linkpulse-dashboard/ .
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /out/dashboard ./cmd/dashboard
 
-FROM alpine:3.22
+FROM alpine:3.24
 RUN adduser -D -u 10001 app
 USER app
 COPY --from=build /out/dashboard /usr/local/bin/dashboard
