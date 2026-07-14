@@ -35,3 +35,10 @@ export type ServerMessage =
   | { type: "shutdown" };
 
 export type WsStatus = "connecting" | "live" | "reconnecting" | "error";
+
+// Накопленная статистика ссылки (GET /stats/{link_id} → Analytics.GetLinkStats).
+export interface LinkStats {
+  link_id: string;
+  total_clicks: number;
+  hourly: { hour: string; click_count: number }[];
+}

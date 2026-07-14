@@ -1,5 +1,5 @@
 import { getToken, logout } from "./auth";
-import type { Link } from "./types";
+import type { Link, LinkStats } from "./types";
 
 // Запросы идут относительными путями — в dev их проксирует Vite (см.
 // vite.config.ts), в проде — reverse-proxy перед сервисами.
@@ -35,4 +35,9 @@ export function createLink(originalUrl: string): Promise<Link> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ original_url: originalUrl }),
   });
+}
+
+// Накопленная статистика — dashboard-сервис проксирует Analytics.GetLinkStats.
+export function fetchStats(linkId: string): Promise<LinkStats> {
+  return request<LinkStats>(`/stats/${linkId}`);
 }

@@ -70,10 +70,14 @@ func run(log *slog.Logger) error {
 		log.Warn("AUTH_ADDR пуст — ws-авторизация ЗАГЛУШКА (любой непустой токен)")
 	}
 
-	wsServer := ws.NewServer(analyticsv1.NewAnalyticsServiceClient(grpcConn), validator, log)
+	analyticsClient := analyticsv1.NewAnalyticsServiceClient(grpcConn)
+	wsServer := ws.NewServer(analyticsClient, validator, log)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ws", wsServer.Handle)
+	// Историческая статистика (REST-мост к Analytics.GetLinkStats):
+	// live-лента WS живёт только в рамках сессии, накопленные цифры — отсюда.
+	mux.Handle("GET /stats/{link_id}", ws.NewStatsHandler(analyticsClient, validator, log))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))

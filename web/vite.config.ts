@@ -13,6 +13,10 @@ const proxy = {
     target: "ws://localhost:8082",
     ws: true,
   },
+  "/stats": {
+    target: "http://localhost:8082",
+    changeOrigin: true,
+  },
   "/auth": {
     target: "http://localhost:8083",
     changeOrigin: true,

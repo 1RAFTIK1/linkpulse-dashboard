@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createLink, fetchLinks } from "./api";
+import { createLink, fetchLinks, fetchStats } from "./api";
 import { captureTokenFromURL, getToken, loginURL, logout } from "./auth";
 import { Chart } from "./Chart";
 import type { Link } from "./types";
@@ -24,6 +24,8 @@ export default function App() {
   const [selected, setSelected] = useState<Link | null>(null);
   const [newUrl, setNewUrl] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  // Накопленный счётчик из Analytics; live-клики прибавляются поверх него.
+  const [historyTotal, setHistoryTotal] = useState<number | null>(null);
   const { clicks, status } = useLiveClicks(selected?.id ?? null);
 
   const authed = !authRequired || getToken() !== null;
@@ -37,6 +39,16 @@ export default function App() {
       })
       .catch((e) => setFormError(String(e)));
   }, [authed]);
+
+  // При выборе ссылки подтягиваем её накопленную статистику из Analytics —
+  // она переживает перезагрузку страницы и переключение между ссылками.
+  useEffect(() => {
+    if (!authed || !selected) return;
+    setHistoryTotal(null); // показываем «…» пока грузится
+    fetchStats(selected.id)
+      .then((s) => setHistoryTotal(s.total_clicks))
+      .catch(() => setHistoryTotal(0)); // analytics недоступен — считаем от нуля
+  }, [authed, selected]);
 
   // Логин-гейт: return строго ПОСЛЕ всех хуков (правила хуков React —
   // одинаковый порядок вызовов на каждом рендере).
@@ -122,8 +134,8 @@ export default function App() {
                   </a>
                 </h2>
                 <div className="counter">
-                  <strong>{clicks.length}</strong>
-                  <span>кликов за сессию</span>
+                  <strong>{historyTotal === null ? "…" : historyTotal + clicks.length}</strong>
+                  <span>кликов всего</span>
                 </div>
               </div>
               <Chart clicks={clicks} />
