@@ -28,7 +28,7 @@ jobs:
           path: linkpulse-contracts
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version-file: linkpulse-dashboard/go.mod
           cache: true
           cache-dependency-path: linkpulse-dashboard/go.sum
       - name: golangci-lint
@@ -70,7 +70,7 @@ jobs:
           path: linkpulse-contracts
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version-file: linkpulse-dashboard/go.mod
           cache: true
           cache-dependency-path: linkpulse-dashboard/go.sum
       - name: govulncheck
