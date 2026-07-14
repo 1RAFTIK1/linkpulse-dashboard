@@ -11,7 +11,7 @@ RUN npm ci
 COPY linkpulse-dashboard/web/ .
 RUN npm run build
 
-FROM golang:1.26-alpine AS build
+FROM golang:1.26.5-alpine AS build
 WORKDIR /src
 COPY linkpulse-contracts/ ../linkpulse-contracts/
 COPY linkpulse-dashboard/go.mod linkpulse-dashboard/go.sum ./
