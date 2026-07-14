@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
 import { createLink, fetchLinks } from "./api";
+import { captureTokenFromURL, getToken, loginURL, logout } from "./auth";
 import { Chart } from "./Chart";
 import type { Link } from "./types";
 import { useLiveClicks } from "./useLiveClicks";
+
+// Снимаем токен из #fragment ДО первого рендера (модульный top-level код).
+captureTokenFromURL();
+
+// authRequired управляется сборкой стека: dev-режим без Auth service
+// работает по заглушкам, полный стек требует логин через GitHub.
+const authRequired = import.meta.env.VITE_AUTH_REQUIRED === "true";
 
 const statusLabel: Record<string, string> = {
   connecting: "подключение…",
@@ -18,14 +26,31 @@ export default function App() {
   const [formError, setFormError] = useState<string | null>(null);
   const { clicks, status } = useLiveClicks(selected?.id ?? null);
 
+  const authed = !authRequired || getToken() !== null;
+
   useEffect(() => {
+    if (!authed) return; // без токена не дёргаем API — всё равно будет 401
     fetchLinks()
       .then((ls) => {
         setLinks(ls);
         if (ls.length > 0) setSelected(ls[0]);
       })
       .catch((e) => setFormError(String(e)));
-  }, []);
+  }, [authed]);
+
+  // Логин-гейт: return строго ПОСЛЕ всех хуков (правила хуков React —
+  // одинаковый порядок вызовов на каждом рендере).
+  if (!authed) {
+    return (
+      <div className="layout login-screen">
+        <h1>LinkPulse</h1>
+        <p>Короткие ссылки с live-аналитикой кликов.</p>
+        <a className="login-btn" href={loginURL}>
+          Войти через GitHub
+        </a>
+      </div>
+    );
+  }
 
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -47,6 +72,11 @@ export default function App() {
           LinkPulse <span className="pulse-dot" data-status={status} />
         </h1>
         <span className="ws-status">{statusLabel[status]}</span>
+        {authRequired && (
+          <button className="logout" onClick={logout}>
+            выйти
+          </button>
+        )}
       </header>
 
       <section className="create">

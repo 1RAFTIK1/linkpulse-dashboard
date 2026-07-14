@@ -7,8 +7,10 @@ import (
 )
 
 type Config struct {
-	HTTPAddr        string // адрес WS/HTTP сервера
-	AnalyticsAddr   string // gRPC-адрес Analytics service
+	HTTPAddr      string // адрес WS/HTTP сервера
+	AnalyticsAddr string // gRPC-адрес Analytics service
+	// AuthAddr — gRPC-адрес Auth service; "" = dev-заглушка (любой непустой токен).
+	AuthAddr        string
 	WebDist         string // путь к собранной SPA (web/dist); "" = статику не отдаём
 	ShutdownTimeout time.Duration
 }
@@ -17,6 +19,7 @@ func Load() Config {
 	return Config{
 		HTTPAddr:        getEnv("HTTP_ADDR", ":8082"),
 		AnalyticsAddr:   getEnv("ANALYTICS_ADDR", "localhost:50051"),
+		AuthAddr:        os.Getenv("AUTH_ADDR"),
 		WebDist:         os.Getenv("WEB_DIST"),
 		ShutdownTimeout: 10 * time.Second,
 	}

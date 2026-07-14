@@ -18,6 +18,7 @@ import (
 
 	analyticsv1 "github.com/1RAFTIK1/linkpulse-contracts/gen/go/analytics/v1"
 
+	"github.com/1RAFTIK1/linkpulse-dashboard/internal/authclient"
 	"github.com/1RAFTIK1/linkpulse-dashboard/internal/config"
 	"github.com/1RAFTIK1/linkpulse-dashboard/internal/ws"
 )
@@ -51,7 +52,25 @@ func run(log *slog.Logger) error {
 		}
 	}()
 
-	wsServer := ws.NewServer(analyticsv1.NewAnalyticsServiceClient(grpcConn), log)
+	// Авторизация WS: реальная через Auth service, если задан AUTH_ADDR.
+	var validator ws.TokenValidator
+	if cfg.AuthAddr != "" {
+		authClient, err := authclient.New(cfg.AuthAddr)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := authClient.Close(); err != nil {
+				log.Warn("закрытие auth-клиента", "error", err)
+			}
+		}()
+		validator = authClient
+		log.Info("ws-авторизация включена", "auth_addr", cfg.AuthAddr)
+	} else {
+		log.Warn("AUTH_ADDR пуст — ws-авторизация ЗАГЛУШКА (любой непустой токен)")
+	}
+
+	wsServer := ws.NewServer(analyticsv1.NewAnalyticsServiceClient(grpcConn), validator, log)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ws", wsServer.Handle)

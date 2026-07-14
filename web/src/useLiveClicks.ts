@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getToken } from "./auth";
 import type { ClickData, ClientMessage, ServerMessage, WsStatus } from "./types";
 
 const MAX_FEED = 50; // сколько последних кликов держим в ленте
@@ -28,8 +29,9 @@ export function useLiveClicks(linkId: string | null) {
       const send = (msg: ClientMessage) => ws.send(JSON.stringify(msg));
 
       ws.onopen = () => {
-        // Фаза 4: токен — заглушка; фаза 5 подставит настоящий JWT из OAuth.
-        send({ type: "auth", token: "stub-token" });
+        // Настоящий JWT из OAuth-логина; если его нет (dev без Auth),
+        // бэкенд-заглушка примет любой непустой токен.
+        send({ type: "auth", token: getToken() ?? "dev-stub-token" });
       };
 
       ws.onmessage = (raw) => {

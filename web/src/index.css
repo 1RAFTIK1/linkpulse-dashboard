@@ -85,3 +85,17 @@ aside h2, main h2, main h3 { font-size: 14px; color: var(--muted); text-transfor
 .feed .country { color: var(--accent); font-weight: 600; }
 
 .empty { color: var(--muted); padding: 8px 0; list-style: none; }
+
+.login-screen { text-align: center; padding-top: 18vh; }
+.login-screen p { color: var(--muted); margin-bottom: 28px; }
+.login-btn {
+  display: inline-block; padding: 10px 22px; border-radius: 8px;
+  background: var(--accent-dim); color: #fff; font-weight: 600; text-decoration: none;
+}
+.login-btn:hover { background: var(--accent); }
+
+.logout {
+  margin-left: auto; background: none; border: 1px solid var(--border);
+  color: var(--muted); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+}
+.logout:hover { color: var(--text); }

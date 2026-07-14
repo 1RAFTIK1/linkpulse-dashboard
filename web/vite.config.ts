@@ -2,7 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 // Прокси решает CORS в dev: SPA живёт на :5173, но ходит на свои бэкенды
-// относительными путями. /api → link service, /ws → dashboard service.
+// относительными путями. /api → link, /ws → dashboard, /auth → auth service
+// (OAuth-редиректы и JWKS).
 const proxy = {
   "/api": {
     target: "http://localhost:8081",
@@ -11,6 +12,10 @@ const proxy = {
   "/ws": {
     target: "ws://localhost:8082",
     ws: true,
+  },
+  "/auth": {
+    target: "http://localhost:8083",
+    changeOrigin: true,
   },
 };
 

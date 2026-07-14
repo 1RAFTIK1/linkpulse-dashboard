@@ -18,17 +18,24 @@ import (
 // writeTimeout — потолок на запись одного сообщения в WS.
 const writeTimeout = 5 * time.Second
 
+// TokenValidator проверяет токен из первого WS-сообщения; nil — dev-заглушка
+// (принимается любой непустой токен). Реализация — gRPC ValidateToken к Auth.
+type TokenValidator interface {
+	Validate(ctx context.Context, token string) (userID string, valid bool, err error)
+}
+
 // Server принимает WS-соединения и мостит их к gRPC-стримам Analytics.
 type Server struct {
 	analytics analyticsv1.AnalyticsServiceClient
+	auth      TokenValidator // nil = заглушка
 	log       *slog.Logger
 
 	mu    sync.Mutex
 	conns map[*conn]struct{} // активные соединения — для shutdown-рассылки
 }
 
-func NewServer(analytics analyticsv1.AnalyticsServiceClient, log *slog.Logger) *Server {
-	return &Server{analytics: analytics, log: log, conns: make(map[*conn]struct{})}
+func NewServer(analytics analyticsv1.AnalyticsServiceClient, auth TokenValidator, log *slog.Logger) *Server {
+	return &Server{analytics: analytics, auth: auth, log: log, conns: make(map[*conn]struct{})}
 }
 
 // conn — одно WS-соединение: авторизация, подписки, сериализация записи.
@@ -78,11 +85,26 @@ func (s *Server) readLoop(ctx context.Context, c *conn) {
 
 		switch msg.Type {
 		case "auth":
-			// Фаза 4: заглушка — принимаем любой непустой токен.
-			// Фаза 5 заменит на gRPC auth.ValidateToken (спека §8, шаг 2).
 			if msg.Token == "" {
 				c.send(ctx, s.log, serverMessage{Type: "error", Error: "пустой токен"})
 				continue
+			}
+			// Реальная проверка через Auth service (спека §8, шаг 2);
+			// без AUTH_ADDR (s.auth == nil) — dev-заглушка.
+			if s.auth != nil {
+				vctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+				userID, valid, err := s.auth.Validate(vctx, msg.Token)
+				cancel()
+				if err != nil {
+					s.log.Error("validate token", "error", err)
+					c.send(ctx, s.log, serverMessage{Type: "error", Error: "auth временно недоступен"})
+					continue
+				}
+				if !valid {
+					c.send(ctx, s.log, serverMessage{Type: "error", Error: "невалидный токен"})
+					continue
+				}
+				s.log.Info("ws авторизован", "user_id", userID)
 			}
 			c.mu.Lock()
 			c.authed = true
